@@ -12,14 +12,21 @@
 <body>
   <div class="container">
     <h1>Coursetro Instructor</h1>
+    <span id="countIns"></span>
     <p>Owner address:
       <span id="owner"></span>
     </p>
     <h2 id="instructor"></h2>
+    <span id="insTrans"></span>
+    <hr>
+
     <img id="loader" src="https://loading.io/spinners/double-ring/lg.double-ring-spinner.gif">
     
-    <label for="name" class="col-lg-2 control-label">Instructor Name</label>
-    <input id="name" type="text">
+    <label for="fName" class="col-lg-2 control-label">First Name</label>
+    <input id="fName" type="text">
+
+    <label for="lName" class="col-lg-2 control-label">Last Name</label>
+    <input id="lName" type="text">
     
     <label for="name" class="col-lg-2 control-label">Instructor Age</label>
     <input id="age" type="text">
@@ -40,32 +47,70 @@
 
     var CoursetroContract = web3.eth.contract([
         {
-          "constant": false,
+          "constant": true,
           "inputs": [
             {
-              "name": "_fName",
-              "type": "string"
-            },
-            {
-              "name": "_age",
-              "type": "uint256"
+              "name": "_address",
+              "type": "address"
             }
           ],
-          "name": "setInstructor",
-          "outputs": [],
+          "name": "getInstructor",
+          "outputs": [
+            {
+              "name": "",
+              "type": "uint256"
+            },
+            {
+              "name": "",
+              "type": "bytes16"
+            },
+            {
+              "name": "",
+              "type": "bytes16"
+            }
+          ],
           "payable": false,
-          "stateMutability": "nonpayable",
+          "stateMutability": "view",
           "type": "function"
         },
         {
           "constant": true,
           "inputs": [],
-          "name": "getInstructor",
+          "name": "getInstructors",
           "outputs": [
             {
               "name": "",
-              "type": "string"
-            },
+              "type": "address[]"
+            }
+          ],
+          "payable": false,
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "constant": true,
+          "inputs": [
+            {
+              "name": "",
+              "type": "uint256"
+            }
+          ],
+          "name": "instructorAccts",
+          "outputs": [
+            {
+              "name": "",
+              "type": "address"
+            }
+          ],
+          "payable": false,
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "constant": true,
+          "inputs": [],
+          "name": "countInstructors",
+          "outputs": [
             {
               "name": "",
               "type": "uint256"
@@ -76,18 +121,43 @@
           "type": "function"
         },
         {
-          "inputs": [],
+          "constant": false,
+          "inputs": [
+            {
+              "name": "_address",
+              "type": "address"
+            },
+            {
+              "name": "_age",
+              "type": "uint256"
+            },
+            {
+              "name": "_fName",
+              "type": "bytes16"
+            },
+            {
+              "name": "_lName",
+              "type": "bytes16"
+            }
+          ],
+          "name": "setInstructor",
+          "outputs": [],
           "payable": false,
           "stateMutability": "nonpayable",
-          "type": "constructor"
+          "type": "function"
         },
         {
           "anonymous": false,
           "inputs": [
             {
               "indexed": false,
-              "name": "name",
-              "type": "string"
+              "name": "fName",
+              "type": "bytes16"
+            },
+            {
+              "indexed": false,
+              "name": "lName",
+              "type": "bytes16"
             },
             {
               "indexed": false,
@@ -95,31 +165,39 @@
               "type": "uint256"
             }
           ],
-          "name": "Instructor",
+          "name": "instructorInfo",
           "type": "event"
         }
       ])
 
       var Coursetro = CoursetroContract.at('0xbb701055ff3c6f89ae5682733095f50bdc39b7bb');
       
-      var instructorEvent = Coursetro.Instructor();
+      var instructorEvent = Coursetro.instructorInfo({}, 'latest');
+
 
       instructorEvent.watch(function(error, result) {
         if(!error){
-          $('#loader').hide();
-          $('#instructor').html(result.args.name + ' (' + result.args.age + ' years old)');
+          if(result.blockhash != $('#insTrans').html()) {
+            $('#loader').hide();
+          }
+          $('#insTrans').html("Block Hash: " + result.blockHash)
+          $('#instructor').html(web3.toAscii(result.args.fName) + ' ' + web3.toAscii(result.args.lName) + ' (' + result.args.age + ' years old)');
         } else {
           $('#loader').hide();
           console.log(error);
         }
       });
 
+      Coursetro.countIntructors((err, res) => {
+        if (res)
+          $('#countIns').html(res.c + ' Instructors')
+      })
+
       $('#button').click(function() {
         $('#loader').show();
-        Coursetro.setInstructor($('#name').val(), $("#age").val(), (err, res) => {
+        Coursetro.setInstructor(web3.eth.defaultAccount, $('#age').val(), $("#fName").val(), $("#lName").val(), (err, res) => {
           if (err) {
             $('#loader').hide();
-            console.log('oh no')
           }
         })
       })
